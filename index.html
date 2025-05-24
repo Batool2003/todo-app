@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo App</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <h1>Todo App</h1>
+  <div class="wrapper">
+    <form>
+      <input id="todo-input" type="text" placeholder="Write anything and hit enter to add" autocomplete="off" />
+      <button id="add-button">ADD</button>
+    </form>
+    <ul id="todo-list">
+      <li class="todo">
+        <input type="checkbox" id="todo-1" />
+        <label for="todo-1" class="todo-label">
+          <span class="custom-checkbox">
+            <span class="material-symbols-outlined">check</span>
+          </span>
+          <span class="todo-text">webdev project with html, css and js</span>
+        </label>
+        <button class="delete-button">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </li>
+
+      <li class="todo">
+        <input type="checkbox" id="todo-2" />
+        <label for="todo-2" class="todo-label">
+          <span class="custom-checkbox">
+            <span class="material-symbols-outlined">check</span>
+          </span>
+          <span class="todo-text">another todo item here</span>
+        </label>
+        <button class="delete-button">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    const todoform = document.querySelector('form');
+    const todoInput = document.getElementById('todo-input');
+    const todoListUL = document.getElementById('todo-list');
+
+    let allTodos = getTodos();
+
+    updateTodoList();
+
+    todoform.addEventListener('submit', function (event) {
+      event.preventDefault();
+      addTodo();
+    });
+
+    function addTodo() {
+      const todoText = todoInput.value.trim();
+      if (todoText.length > 0) {
+        const todoObject = {
+          text: todoText,
+          completed: false
+        };
+        allTodos.push(todoObject);
+        saveTodos();
+        updateTodoList();
+        todoInput.value = "";
+      }
+    }
+
+    function updateTodoList() {
+      todoListUL.innerHTML = "";
+      allTodos.forEach((todo, todoIndex) => {
+        const todoItem = createTodoItem(todo, todoIndex);
+        todoListUL.appendChild(todoItem);
+      });
+    }
+
+    function createTodoItem(todo, todoIndex) {
+      const todoId = `todo-${todoIndex}`;
+
+      const todoLI = document.createElement('li');
+      todoLI.className = "todo";
+      todoLI.innerHTML = `
+        <input type="checkbox" id="${todoId}" ${todo.completed ? 'checked' : ''} />
+        <label for="${todoId}" class="todo-label">
+          <span class="custom-checkbox">
+            <span class="material-symbols-outlined">check</span>
+          </span>
+          <span class="todo-text">${todo.text}</span>
+        </label>
+        <button class="delete-button">
+          <span class="material-symbols-outlined">delete</span>
+        </button>`;
+
+      const deleteButton = todoLI.querySelector(".delete-button");
+      deleteButton.addEventListener("click", () => {
+        deleteTodoItem(todoIndex);
+      });
+
+      const checkbox = todoLI.querySelector("input[type='checkbox']");
+      checkbox.addEventListener("change", () => {
+        allTodos[todoIndex].completed = checkbox.checked;
+        saveTodos();
+      });
+
+      return todoLI;
+    }
+
+    function deleteTodoItem(todoIndex) {
+      allTodos = allTodos.filter((_, i) => i !== todoIndex);
+      saveTodos();
+      updateTodoList();
+    }
+
+    function saveTodos() {
+      localStorage.setItem("todos", JSON.stringify(allTodos));
+    }
+
+    function getTodos() {
+      const todos = localStorage.getItem("todos") || "[]";
+      return JSON.parse(todos);
+    }
+  </script>
+</body>
+
+</html>

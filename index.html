@@ -12,120 +12,145 @@
 <body>
   <h1>Todo App</h1>
   <div class="wrapper">
-    <form>
-      <input id="todo-input" type="text" placeholder="Write anything and hit enter to add" autocomplete="off" />
+    <form id="todo-form" >
+      <!-- <input id="todo-input" type="text" placeholder="Write anything and hit enter to add" autocomplete="off" /> -->
+ <label for="todo-title"> Topic Title</label>
+  <input id="todo-title" type="text" placeholder="Enter the topic title..." required />
+<label>Task description</label>
+      <input id="todo-desc" type="text" placeholder="Task description" />
+      <label>datetime-local</label>
+      <input id="todo-date" type="date" />
       <button id="add-button">ADD</button>
     </form>
-    <ul id="todo-list">
-      <li class="todo">
-        <input type="checkbox" id="todo-1" />
-        <label for="todo-1" class="todo-label">
-          <span class="custom-checkbox">
-            <span class="material-symbols-outlined">check</span>
-          </span>
-          <span class="todo-text">webdev project with html, css and js</span>
-        </label>
-        <button class="delete-button">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
-      </li>
 
-      <li class="todo">
-        <input type="checkbox" id="todo-2" />
-        <label for="todo-2" class="todo-label">
-          <span class="custom-checkbox">
-            <span class="material-symbols-outlined">check</span>
-          </span>
-          <span class="todo-text">another todo item here</span>
-        </label>
-        <button class="delete-button">
+    <select id="filter">
+      <option value="all">All</option>
+      <option value="completed">completed</option>
+      <option value="uncompleted">uncompleted</option>
+      <option value="late">Late</option>
+    </select>
+    <ul id="todo-list">
+
+  <!-- <button class="delete-button">
           <span class="material-symbols-outlined">delete</span>
-        </button>
-      </li>
-    </ul>
+        </button> -->
+        </ul>
+
   </div>
 
   <script>
-    const todoform = document.querySelector('form');
-    const todoInput = document.getElementById('todo-input');
-    const todoListUL = document.getElementById('todo-list');
+ const form = document.getElementById('todo-form');
+const filter = document.getElementById('filter');
+const todoListUL = document.getElementById('todo-list');
+let todos = JSON.parse(localStorage.getItem("todos") || "[]");
 
-    let allTodos = getTodos();
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const title = document.getElementById("todo-title").value.trim();
+  const desc = document.getElementById("todo-desc").value.trim();
+  const due = document.getElementById("todo-date").value;
 
-    updateTodoList();
+  if (title) {
+    todos.push({
+      title,
+      desc,
+      due,
+      addedAt: new Date().toISOString(),
+      completed: false
+    });
+    saveAndRender();
+    form.reset();
+  }
+});
 
-    todoform.addEventListener('submit', function (event) {
-      event.preventDefault();
-      addTodo();
+filter.addEventListener("change", renderTodos);
+
+function saveAndRender() {
+  localStorage.setItem("todos", JSON.stringify(todos));
+  renderTodos();
+}
+
+function renderTodos() {
+  const now = new Date();
+  todoListUL.innerHTML = "";
+
+  todos.forEach((todo, index) => {
+    const dueDate = new Date(todo.due);
+    const isLate = todo.due && !todo.completed && dueDate < now;
+
+    // تطبيق الفلترة
+    if (
+      (filter.value === "completed" && !todo.completed) ||
+      (filter.value === "uncompleted" && todo.completed) ||
+      (filter.value === "late" && !isLate)
+    ) return;
+
+    // إنشاء العنصر
+    const li = document.createElement("li");
+    li.className = "todo";
+    if (todo.completed) li.classList.add("completed");
+    if (isLate) li.classList.add("late");
+
+  
+li.innerHTML = `
+  <div class="todo-main">
+    <div class="todo-header">
+      <input type="checkbox" ${todo.completed ? "checked" : ""}>
+      <span class="todo-title">${todo.title}</span>
+    </div>
+    <span class="todo-desc">${todo.desc || ""}</span>
+    <div class="todo-meta">
+      <span class="todo-time"> Added: ${new Date(todo.addedAt).toLocaleDateString()}</span>
+      ${todo.due ? `<span class="todo-time"> Due: ${dueDate.toLocaleDateString()}</span>` : ""}
+    </div>
+    <input type="text" class="edit-input" style="display:none;" />
+  </div>
+  <div class="btn-group">
+    <button class="edit-btn"> Edit</button>
+    <button class="delete-btn"> Delete</button>
+  </div>
+`;
+
+
+
+
+    const checkbox = li.querySelector("input[type='checkbox']");
+    checkbox.addEventListener("change", () => {
+      todos[index].completed = checkbox.checked;
+      saveAndRender();
     });
 
-    function addTodo() {
-      const todoText = todoInput.value.trim();
-      if (todoText.length > 0) {
-        const todoObject = {
-          text: todoText,
-          completed: false
-        };
-        allTodos.push(todoObject);
-        saveTodos();
-        updateTodoList();
-        todoInput.value = "";
+    const editBtn = li.querySelector(".edit-btn");
+    const titleSpan = li.querySelector(".todo-title");
+    const editInput = li.querySelector(".edit-input");
+
+    editBtn.addEventListener("click", () => {
+      const isHidden = window.getComputedStyle(editInput).display === "none";
+if (isHidden) {
+        editInput.style.display = "block";
+        editInput.value = titleSpan.textContent;
+        editBtn.textContent = "sure";
+      } else {
+        const newTitle = editInput.value.trim();
+        if (newTitle) {
+          todos[index].title = newTitle;
+          saveAndRender();
+        }
       }
-    }
+    });
 
-    function updateTodoList() {
-      todoListUL.innerHTML = "";
-      allTodos.forEach((todo, todoIndex) => {
-        const todoItem = createTodoItem(todo, todoIndex);
-        todoListUL.appendChild(todoItem);
-      });
-    }
+    const deleteBtn = li.querySelector(".delete-btn");
+    deleteBtn.addEventListener("click", () => {
+      todos.splice(index, 1);
+      saveAndRender();
+    });
 
-    function createTodoItem(todo, todoIndex) {
-      const todoId = `todo-${todoIndex}`;
+    todoListUL.appendChild(li);
+  });
+}
 
-      const todoLI = document.createElement('li');
-      todoLI.className = "todo";
-      todoLI.innerHTML = `
-        <input type="checkbox" id="${todoId}" ${todo.completed ? 'checked' : ''} />
-        <label for="${todoId}" class="todo-label">
-          <span class="custom-checkbox">
-            <span class="material-symbols-outlined">check</span>
-          </span>
-          <span class="todo-text">${todo.text}</span>
-        </label>
-        <button class="delete-button">
-          <span class="material-symbols-outlined">delete</span>
-        </button>`;
+renderTodos();
 
-      const deleteButton = todoLI.querySelector(".delete-button");
-      deleteButton.addEventListener("click", () => {
-        deleteTodoItem(todoIndex);
-      });
-
-      const checkbox = todoLI.querySelector("input[type='checkbox']");
-      checkbox.addEventListener("change", () => {
-        allTodos[todoIndex].completed = checkbox.checked;
-        saveTodos();
-      });
-
-      return todoLI;
-    }
-
-    function deleteTodoItem(todoIndex) {
-      allTodos = allTodos.filter((_, i) => i !== todoIndex);
-      saveTodos();
-      updateTodoList();
-    }
-
-    function saveTodos() {
-      localStorage.setItem("todos", JSON.stringify(allTodos));
-    }
-
-    function getTodos() {
-      const todos = localStorage.getItem("todos") || "[]";
-      return JSON.parse(todos);
-    }
   </script>
 </body>
 

@@ -69,7 +69,6 @@ function saveAndRender() {
   localStorage.setItem("todos", JSON.stringify(todos));
   renderTodos();
 }
-
 function renderTodos() {
   const now = new Date();
   todoListUL.innerHTML = "";
@@ -78,16 +77,14 @@ function renderTodos() {
     const dueDate = new Date(todo.due);
     const isLate = todo.due && !todo.completed && dueDate < now;
 
-    // تطبيق الفلترة
+    
     if (
       (filter.value === "completed" && !todo.completed) ||
       (filter.value === "uncompleted" && todo.completed) ||
       (filter.value === "late" && !isLate)
     ) return;
-
-    // إنشاء العنصر
     const li = document.createElement("li");
-    li.className = "todo";
+    li.className = "todo";;
     if (todo.completed) li.classList.add("completed");
     if (isLate) li.classList.add("late");
 
@@ -110,10 +107,6 @@ li.innerHTML = `
     <button class="delete-btn"> Delete</button>
   </div>
 `;
-
-
-
-
     const checkbox = li.querySelector("input[type='checkbox']");
     checkbox.addEventListener("change", () => {
       todos[index].completed = checkbox.checked;
@@ -137,9 +130,7 @@ if (isHidden) {
           saveAndRender();
         }
       }
-    });
-
-    const deleteBtn = li.querySelector(".delete-btn");
+    }); const deleteBtn = li.querySelector(".delete-btn");
     deleteBtn.addEventListener("click", () => {
       todos.splice(index, 1);
       saveAndRender();
